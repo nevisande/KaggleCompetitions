@@ -32,13 +32,16 @@ data = imputation('mean', numeric_and_null_columns, data)
 # dropping null columns
 not_na_data = data.dropna(axis=1)
 X = not_na_data.drop('SalePrice', axis=1)
-obj_col = list(X.select_dtypes('object').columns)
+y = not_na_data.SalePrice
+# preprocessing object columns
+obj_col = [col for col in X.columns if X[col].dtype == 'object']
+obj_col_low_cardinality = [col for col in obj_col if X[col].nunique() <= 10]
 ohe = OneHotEncoder(handle_unknown='ignore', sparse=False)
-encoded_obj_col = pd.DataFrame(ohe.fit_transform(X[obj_col]))
+encoded_obj_col = pd.DataFrame(ohe.fit_transform(X[obj_col_low_cardinality]))
 encoded_obj_col.index = X.index
 X.drop(obj_col, axis=1, inplace=True)
 X = pd.concat([X, encoded_obj_col], axis=1)
-y = not_na_data.SalePrice
+# training
 train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1)
 rfr = RandomForestRegressor(random_state=1)
 rfr.fit(train_X, train_y)
