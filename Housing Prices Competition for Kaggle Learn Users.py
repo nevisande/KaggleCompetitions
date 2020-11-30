@@ -4,6 +4,8 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import OneHotEncoder
+pd.set_option('display.max_columns', 500)
 
 
 # baseline mae = 16433.14142074364
@@ -30,7 +32,12 @@ data = imputation('mean', numeric_and_null_columns, data)
 # dropping null columns
 not_na_data = data.dropna(axis=1)
 X = not_na_data.drop('SalePrice', axis=1)
-X = pd.get_dummies(X)
+obj_col = list(X.select_dtypes('object').columns)
+ohe = OneHotEncoder(handle_unknown='ignore', sparse=False)
+encoded_obj_col = pd.DataFrame(ohe.fit_transform(X[obj_col]))
+encoded_obj_col.index = X.index
+X.drop(obj_col, axis=1, inplace=True)
+X = pd.concat([X, encoded_obj_col], axis=1)
 y = not_na_data.SalePrice
 train_X, val_X, train_y, val_y = train_test_split(X, y, random_state=1)
 rfr = RandomForestRegressor(random_state=1)
