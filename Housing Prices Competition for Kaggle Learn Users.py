@@ -10,7 +10,7 @@ from sklearn.compose import ColumnTransformer
 
 pd.set_option('display.max_columns', 500)
 
-# baseline mae = 16334.336551859096
+# baseline mae = 16533.507283757335
 # loading data
 data = pd.read_csv('data/Housing Prices Competition for Kaggle Learn Users/train.csv', index_col='Id')
 # dropping object columns with null value and high cardinality
@@ -23,7 +23,7 @@ object_columns = [col for col in data.select_dtypes(include=['object']).columns]
 numeric_transformer = SimpleImputer(strategy='mean')
 object_transformer = OneHotEncoder(handle_unknown='ignore', sparse=False)
 preprocessor = ColumnTransformer(transformers=[('num', numeric_transformer, numeric_columns),
-                                               ('object', object_transformer, object_columns)])
+                                               ('object', object_transformer, object_columns)], remainder='passthrough')
 model = RandomForestRegressor(random_state=1)
 pipeline = Pipeline(steps=[('preprocessor', preprocessor), ('model', model)])
 # creating train and test data
