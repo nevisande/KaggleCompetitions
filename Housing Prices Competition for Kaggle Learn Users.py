@@ -10,7 +10,7 @@ from sklearn.compose import ColumnTransformer
 
 pd.set_option('display.max_columns', 500)
 
-# baseline mae = 16533.507283757335
+# baseline mae = 16507.178
 # loading data
 data = pd.read_csv('data/Housing Prices Competition for Kaggle Learn Users/train.csv', index_col='Id')
 # dropping object columns with null value and high cardinality
@@ -18,6 +18,10 @@ null_threshold = data.shape[0] * .05
 object_columns_with_null = [col for col in data.select_dtypes(include=['object']).columns if data[col].isna().sum() >
                             null_threshold or data[col].nunique() > 10]
 data.drop(object_columns_with_null, axis=1, inplace=True)
+# dropping columns with low correlation
+corr = data.corr()['SalePrice']
+low_correlation = [col for col in corr.index if abs(corr[col]) < .07]
+data.drop(low_correlation, axis=1, inplace=True)
 # creating pipeline
 numeric_columns = [col for col in data.select_dtypes(include=np.number).columns if data[col].isnull().any()]
 object_columns = [col for col in data.select_dtypes(include=['object']).columns]
