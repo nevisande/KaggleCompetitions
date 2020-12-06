@@ -1,15 +1,15 @@
 import pandas as pd
 import numpy as np
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_val_score
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
+from xgboost import XGBRegressor
 
 pd.set_option('display.max_columns', 500)
 
-# baseline mae = 17707.492064579255
+# baseline mae = 17668.08430626223
 # loading data
 data = pd.read_csv('data/Housing Prices Competition for Kaggle Learn Users/train.csv', index_col='Id')
 # dropping object columns with null value and high cardinality
@@ -30,7 +30,7 @@ ohe = OneHotEncoder(handle_unknown='ignore', sparse=False)
 object_transformer = Pipeline(steps=[('imputer', object_imputer), ('ohe', ohe)])
 preprocessor = ColumnTransformer(transformers=[('num', numeric_transformer, numeric_columns),
                                                ('object', object_transformer, object_columns)], remainder='passthrough')
-model = RandomForestRegressor(random_state=1)
+model = XGBRegressor(n_estimators=1000, learning_rate=.05)
 pipeline = Pipeline(steps=[('preprocessor', preprocessor), ('model', model)])
 # creating train and test data
 X = data.drop('SalePrice', axis=1)
