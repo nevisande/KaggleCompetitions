@@ -6,30 +6,40 @@ from sklearn.preprocessing import OneHotEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from xgboost import XGBRegressor
+from category_encoders import CountEncoder
 
 pd.set_option('display.max_columns', 500)
 
-# baseline mae = 17668.08430626223
+# baseline mae = 16117.452052119008
 # loading data
 data = pd.read_csv('data/Housing Prices Competition for Kaggle Learn Users/train.csv', index_col='Id')
 # dropping object columns with null value and high cardinality
 null_threshold = data.shape[0] * .05
-object_columns_with_null = [col for col in data.select_dtypes(include=['object']).columns if data[col].isna().sum() >
-                            null_threshold or data[col].nunique() > 10]
-data.drop(object_columns_with_null, axis=1, inplace=True)
+object_columns_with_null_and_high_cardinality = [col for col in data.select_dtypes(include=['object']).columns if
+                                                 data[col].isna().sum() > null_threshold and data[col].nunique() > 10]
+data.drop(object_columns_with_null_and_high_cardinality, axis=1, inplace=True)
 # dropping columns with low correlation
 corr = data.corr()['SalePrice']
 low_correlation = [col for col in corr.index if abs(corr[col]) < .07]
 data.drop(low_correlation, axis=1, inplace=True)
 # creating pipeline
 numeric_columns = [col for col in data.select_dtypes(include=np.number).columns if data[col].isnull().any()]
-object_columns = [col for col in data.select_dtypes(include=['object']).columns]
+object_columns_with_low_cardinality = [col for col in data.select_dtypes(include=['object']).columns if
+                                       data[col].nunique() < 10]
+object_columns_with_high_cardinality = [col for col in data.select_dtypes(include=['object']).columns if
+                                        data[col].nunique() >= 10]
 numeric_transformer = SimpleImputer(strategy='mean')
 object_imputer = SimpleImputer(strategy='constant', fill_value='missing')
 ohe = OneHotEncoder(handle_unknown='ignore', sparse=False)
-object_transformer = Pipeline(steps=[('imputer', object_imputer), ('ohe', ohe)])
+ce = CountEncoder(min_group_size=0.01)
+object_transformer_with_low_cardinality = Pipeline(steps=[('imputer', object_imputer), ('ohe', ohe)])
+object_transformer_with_high_cardinality = Pipeline(steps=[('imputer', object_imputer), ('ce', ce)])
 preprocessor = ColumnTransformer(transformers=[('num', numeric_transformer, numeric_columns),
-                                               ('object', object_transformer, object_columns)], remainder='passthrough')
+                                               ('object_low_cardinality', object_transformer_with_low_cardinality,
+                                                object_columns_with_low_cardinality),
+                                               ('object_high_cardinality', object_transformer_with_high_cardinality,
+                                                object_columns_with_high_cardinality)],
+                                 remainder='passthrough')
 model = XGBRegressor(n_estimators=1000, learning_rate=.05)
 pipeline = Pipeline(steps=[('preprocessor', preprocessor), ('model', model)])
 # creating train and test data
