@@ -7,16 +7,17 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from xgboost import XGBRegressor
 from category_encoders import CountEncoder
+from itertools import combinations
 
 pd.set_option('display.max_columns', 500)
 
-# baseline mae = 16117.452052119008
+# baseline mae = 15839.840448416096
 # loading data
 data = pd.read_csv('data/Housing Prices Competition for Kaggle Learn Users/train.csv', index_col='Id')
 # dropping object columns with null value and high cardinality
 null_threshold = data.shape[0] * .05
 object_columns_with_null_and_high_cardinality = [col for col in data.select_dtypes(include=['object']).columns if
-                                                 data[col].isna().sum() > null_threshold and data[col].nunique() > 10]
+                                                 data[col].isna().sum() > null_threshold]
 data.drop(object_columns_with_null_and_high_cardinality, axis=1, inplace=True)
 # dropping columns with low correlation
 corr = data.corr()['SalePrice']
